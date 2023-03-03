@@ -6,7 +6,7 @@ import Start from "./components/Start"
 export default function App() {
 
     /* STATES */
-    const [start, setStart] = React.useState(false);
+    const [start, setStart] = React.useState(true);
     const [finished, setFinished] = React.useState(false);
     const [questions, setQuestions] = React.useState([]);
     
@@ -16,6 +16,7 @@ export default function App() {
         .then(res => res.json())
         .then(data => helpSetQuestions(data.results))
     }, [start]);
+
     
     /* FUNCTIONS */
     /**
@@ -83,11 +84,13 @@ export default function App() {
 
             //looks through the entire state: questions
             for(let i = 0; i < questions.length; i++) {
-                //looks at each index of the answer array in each question in state: questions
-                for(let j = 0; j < questions[i].answers.length; j++) {
-                    //toggles whichever answer is already clicked
-                    if(questions[i].answers[j].isClicked) {
-                        newArr[i].answers[j].isClicked = !newArr[i].answers[j].isClicked;
+                if(questions[i].id === questionId) {
+                    //looks at each index of the answer array in each question in state: questions
+                    for(let j = 0; j < questions[i].answers.length; j++) {
+                        //toggles whichever answer is already clicked
+                        if(questions[i].answers[j].isClicked) {
+                            newArr[i].answers[j].isClicked = !newArr[i].answers[j].isClicked;
+                        }
                     }
                 }
             }
@@ -103,6 +106,36 @@ export default function App() {
             setQuestions(newArr);
         
             console.log('click'); //Debugging 
+        } else {
+            alert('Please Restart To Play Again');
+        }
+    }
+
+    /**
+     * 
+     * @returns counter of correct answers
+     */
+    function getScore() {
+        let counter = 0;
+        for(let i = 0; i < questions.length; i++) {
+            for(let j = 0; j < questions[i].answers.length; j++) {
+                if(questions[i].answers[j].isClicked && questions[i].answers[j].correct) {
+                    counter++;
+                }
+            }
+        }
+        return counter;
+    }
+
+    function startGame() {
+        setStart(false);
+    }
+
+    function appButton() {
+        if(finished) {
+            setStart(true);
+        } else {
+            setFinished(prev => !prev);
         }
     }
     
@@ -113,15 +146,22 @@ export default function App() {
                     questionId = {question.id} 
                     answers={question.answers} 
                     handleClick={handleClick}
-                    start={start}
+                    finished={finished}
                 />
     });
 
-    //Start component will eventually only be rendered before the game starts  
     return (
         <main>
-            <Start />  
-            {gameElems}
+            {start && <Start startGame={startGame}/>}  
+            {!start &&
+                <div>
+                    {gameElems}
+                    <div className="app--button-zone">
+                        {finished && <h4>You scored {getScore()}/5 correct</h4>}
+                        <button onClick={appButton}>{finished ? "Play Again" : "Check Answer"}</button>
+                    </div>
+                </div>
+            }
         </main>
     );
 }
